@@ -79,7 +79,7 @@ class Application extends BaseApplication
         foreach ($this->container->getByPrefix('console.commands') as $command) {
             $this->add($command);
         }
-        
+
         return parent::doRun($input, $output);
     }
 
@@ -345,6 +345,9 @@ class Application extends BaseApplication
         });
         $container->set('formatter.formatters.dot', function ($c) {
             return new Formatter\DotFormatter($c->get('formatter.presenter'), $c->get('console.io'), $c->get('event_dispatcher.listeners.stats'));
+        });
+        $container->set('formatter.formatters.teamcity', function ($c) {
+            return new Formatter\TeamCityFormatter($c->get('formatter.presenter'), $c->get('console.io'), $c->get('event_dispatcher.listeners.stats'));
         });
         $container->set('formatter.formatters.html', function ($c) {
             $io = new Formatter\Html\IO;
