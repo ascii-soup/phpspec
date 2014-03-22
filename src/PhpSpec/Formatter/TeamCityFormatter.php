@@ -21,8 +21,15 @@ use PhpSpec\Event\ExampleEvent;
  * Class TeamCityFormatter
  * @package PhpSpec\Formatter
  */
+
+
 class TeamCityFormatter extends BasicFormatter
 {
+    public function notAnActualMethod()
+    {
+
+    }
+
     /**
      * @var int
      */
@@ -33,9 +40,9 @@ class TeamCityFormatter extends BasicFormatter
         $message = "##teamcity[{$messageType} ";
         foreach ($values as $key => $value) {
             if (is_string($key)) {
-                $message .= $key . "='" . $value . "' ";
+                $message .= $key . "='" . $this->escape($value) . "' ";
             } else {
-                $message .= $value;
+                $message .= $this->escape($value);
             }
         }
         return $message . "]";
@@ -47,11 +54,25 @@ class TeamCityFormatter extends BasicFormatter
     public function beforeSuite(SuiteEvent $event)
     {
         $this->examplesCount = count($event->getSuite());
+
+        $this->getIO()->writeln($this->teamCityMessage("testCount", array(
+            "count" => $this->examplesCount
+        )));
     }
 
     public function beforeExample(ExampleEvent $event)
     {
-        $this->getIO()->writeln($this->teamCityMessage('testStarted', array('name' => $event->getTitle())));
+        $this->getIO()->writeln(
+            $this->teamCityMessage(
+                'testStarted',
+                array(
+                    'name' => $event->getTitle(),
+                    'captureStandardOutput' => 'false'
+                )
+            )
+        );
+
+        ob_start();
     }
 
     /**
@@ -61,37 +82,67 @@ class TeamCityFormatter extends BasicFormatter
     {
         $io = $this->getIO();
 
-        $eventsCount = $this->getStatisticsCollector()->getEventsCount();
-        if ($eventsCount === 1) {
-            $io->writeln();
+        $output = ob_get_clean();
+        if ($output) {
+            $io->writeln($this->teamCityMessage("testStdOut", array(
+                "name" => $event->getTitle(),
+                "out" => "Test Output\n>>>>>>>>>>>\n{$output}\n<<<<<<<<<<<\n"
+            )));
         }
-
         switch ($event->getResult()) {
             case ExampleEvent::PASSED:
                 break;
             case ExampleEvent::PENDING:
-                $io->writeln($this->teamCityMessage('testIgnored', $event->getMessage()));
+                $io->writeln($this->teamCityMessage('testIgnored', array(
+                        'name' => $event->getTitle(),
+                        'details' => $event->getMessage()
+                )));
                 break;
             case ExampleEvent::FAILED:
-                $io->writeln($this->teamCityMessage('testFailed', $event->getMessage()));
+                $io->writeln($this->teamCityMessage('testFailed', array(
+                    'name' => $event->getTitle(),
+                    'message' => "Failed Test\n\n" . $event->getMessage(),
+                    'details' => $event->getException()->getTraceAsString()
+                )));
                 break;
             case ExampleEvent::BROKEN:
-                $io->writeln($this->teamCityMessage('testFailed', $event->getMessage()));
+                $io->writeln($this->teamCityMessage('testFailed', array(
+                    'name' => $event->getTitle(),
+                    'message' => "Broken Test\n\n" . $event->getMessage(),
+                    'details' => $event->getException()->getTraceAsString(),
+                )));
                 break;
         }
 
-        $this->getIO()->writeln($this->teamCityMessage('testFinished', array('name' => $event->getTitle())));
+        $io->writeln($this->teamCityMessage('testFinished', array(
+            'name' => $event->getTitle(),
+            'duration' => $event->getTime(),
+        )));
     }
 
     public function beforeSpecification(SpecificationEvent $event)
     {
-        $this->getIO()->writeln($this->teamCityMessage('testSuiteStarted', array('name' => $event->getTitle())));
+        $this->getIO()->writeln($this->teamCityMessage('testSuiteStarted', array(
+            'name' => $event->getTitle(),
+            'locationHint' => "php_qn://{$event->getSpecification()->getClassReflection()->getFileName()}::\\{$event->getTitle()}"
+        )));
     }
 
     public function afterSpecification(SpecificationEvent $event)
     {
-        $this->getIO()->writeln($this->teamCityMessage('testSuiteFinished', array('name' => $event->getTitle())));
+        $this->getIO()->writeln($this->teamCityMessage('testSuiteFinished', array(
+            'name' => $event->getTitle()
+        )));
     }
 
+    private function escape($string)
+    {
+        $string = str_replace("|", "||", $string);
+        $string = str_replace("'", "|'", $string);
+        $string = str_replace("\n", "|n", $string);
+        $string = str_replace("\r", "|r", $string);
+        $string = str_replace("]", "|]", $string);
 
+        return $string;
+    }
 }
