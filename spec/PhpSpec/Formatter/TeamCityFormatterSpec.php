@@ -3,9 +3,9 @@
 namespace spec\PhpSpec\Formatter;
 
 use PhpSpec\Console\IO;
+use PhpSpec\Event\ExampleEvent;
 use PhpSpec\Event\SpecificationEvent;
 use PhpSpec\Formatter\Presenter\PresenterInterface;
-use PhpSpec\IO\IOInterface;
 use PhpSpec\Listener\StatisticsCollector;
 use PhpSpec\Loader\Node\SpecificationNode;
 use PhpSpec\ObjectBehavior;
@@ -31,8 +31,8 @@ class TeamCityFormatterSpec extends ObjectBehavior
         $this->beforeSpecification($specificationEvent);
     }
 
-    function it_should_ask_me_about_methods_that_dont_exist()
+    function it_should_ask_me_about_methods_that_dont_exist(ExampleEvent $event)
     {
-        $this->notAnActualMethod()->shouldReturn(1);
+        $this->
     }
 }

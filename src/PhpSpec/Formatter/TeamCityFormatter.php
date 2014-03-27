@@ -25,11 +25,6 @@ use PhpSpec\Event\ExampleEvent;
 
 class TeamCityFormatter extends BasicFormatter
 {
-    public function notAnActualMethod()
-    {
-
-    }
-
     /**
      * @var int
      */
@@ -116,7 +111,6 @@ class TeamCityFormatter extends BasicFormatter
 
         $io->writeln($this->teamCityMessage('testFinished', array(
             'name' => $event->getTitle(),
-            'duration' => $event->getTime(),
         )));
     }
 
@@ -144,5 +138,10 @@ class TeamCityFormatter extends BasicFormatter
         $string = str_replace("]", "|]", $string);
 
         return $string;
+    }
+
+    public function notAnActualMethod()
+    {
+        return 1;
     }
 }
